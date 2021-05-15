@@ -1,0 +1,81 @@
+image: node:12.16.1
+
+before_script:
+  - apt-get update
+  - apt-get install zip --assume-yes
+  - mkdir -p ~/.ssh
+  - echo "$INTRUSION_DEV_PVT_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+  - chmod 600 ~/.ssh/id_rsa
+  - eval "$(ssh-agent -s)"
+  - 'echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+
+stages:
+  - QA-CODE
+  - QA-DB
+  - STG-CODE
+  - STG-DB
+
+
+QA-CODE:
+  stage: QA-CODE
+  script:
+    - mkdir -p ~/script
+    - echo -e "$QACODE" > ~/script/QACODE.sh
+    - echo -n "Deploying to code CMS Server..."
+    - ssh-add <(echo "$WPENGINE-DEV-PVT-KEY")
+    - zip build.zip * .[^.]* -r
+    - scp -P 22 build.zip QA-user@QA-wpengineserver.com:/home/qa/qa_server/qa_cms_tmp/
+    - scp -P 22 -o StrictHostKeyChecking=no ~/script/QACODE.sh QA-user@QA-wpengineserver.com:/home/qa/qa_server/script
+    - ssh -p 22 -o StrictHostKeyChecking=no QA-user@QA-wpengineserver.com "chmod +x /home/qa/qa_server/script/QACODE.sh"
+    - ssh -p 22 -o StrictHostKeyChecking=no QA-user@QA-wpengineserver.com "sh/home/qa/qa_server/script/QACODE.sh"
+
+  only:
+    - tags
+  when: manual
+
+QA-DB:
+  stage: QA-DB
+  script:
+    - mkdir -p ~/script
+    - echo -e "$QADB" > ~/script/QADB.sh
+    - echo -n "Deploying to code CMS Server..."
+    - ssh-add <(echo "$WPENGINE-DEV-PVT-KEY")
+    - scp -P 22 -o StrictHostKeyChecking=no ~/script/QADB.sh QA-user@QA-wpengineserver.com:/home/qa/qa_server/script
+    - ssh -p 22 -o StrictHostKeyChecking=no QA-user@QA-wpengineserver.com "chmod +x /home/qa/qa_server/script/QADB.sh"
+    - ssh -p 22 -o StrictHostKeyChecking=no QA-user@QA-wpengineserver.com "sh  /home/qa/qa_server/script/QADB.sh"
+
+  only:
+    - tags
+  when: manual
+
+STG-CODE:
+  stage: STG-CODE
+  script:
+    - mkdir -p ~/script
+    - echo -e "$STGCODE" > ~/script/STGCODE.sh
+    - echo -n "Deploying to code CMS Server..."
+    - ssh-add <(echo "$WPENGINE-STG-PVT-KEY")
+    - zip build.zip * .[^.]* -r
+    - scp -P 22 build.zip STG-user@STG-wpengineserver.com:/home/stg/stg_server/qa_cms_tmp/
+    - scp -P 22 -o StrictHostKeyChecking=no ~/script/STGCODE.sh QA-user@QA-wpengineserver.com:/home/stg/stg_server/script
+    - ssh -p 22 -o StrictHostKeyChecking=no STG-user@STG-wpengineserver.com "chmod +x /home/stg/stg_server/script/STGCODE.sh"
+    - ssh -p 22 -o StrictHostKeyChecking=no STG-user@STG-wpengineserver.com "sh/home/stg/stg_server/script/STGCODE.sh"
+
+  only:
+    - tags
+  when: manual
+
+QA-DB:
+  stage: STG-DB
+  script:
+    - mkdir -p ~/script
+    - echo -e "$STGDB" > ~/script/STGDB.sh
+    - echo -n "Deploying to code CMS Server..."
+    - ssh-add <(echo "$WPENGINE-STG-PVT-KEY")
+    - scp -P 22 -o StrictHostKeyChecking=no ~/script/STGDB.sh STG-user@STG-wpengineserver.com:/home/stg/stg_server/script
+    - ssh -p 22 -o StrictHostKeyChecking=no STG-user@STG-wpengineserver.com "chmod +x /home/stg/stg_server/script/STGDB.sh"
+    - ssh -p 22 -o StrictHostKeyChecking=no STG-user@STG-wpengineserver.com "sh  /home/stg/stg_server/script/STGDB.sh"
+
+  only:
+    - tags
+  when: manual
