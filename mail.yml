@@ -4,7 +4,7 @@ before_script:
   - apt-get update
   - apt-get install zip --assume-yes
   - mkdir -p ~/.ssh
-  - echo "$INTRUSION_DEV_PVT_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+  - echo "$WPENGINE_DEV_PVT_KEY" | tr -d '\r' > ~/.ssh/id_rsa
   - chmod 600 ~/.ssh/id_rsa
   - eval "$(ssh-agent -s)"
   - 'echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
